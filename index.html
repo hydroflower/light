@@ -664,7 +664,9 @@ function midiFreq(m){return 440*2**((m-69)/12)}
 
 function initAudio(){
   if(ctx)return;
-  ctx=new AudioContext();
+  const AudioContextClass=window.AudioContext||window.webkitAudioContext;
+  if(!AudioContextClass)throw new Error('Web Audio is not supported in this browser.');
+  ctx=new AudioContextClass();
 
   outputBus=ctx.createGain();
   master=ctx.createGain();
@@ -727,6 +729,14 @@ function applyModeFX(){
 async function enableSound(){
   initAudio();
   await ctx.resume();
+  if(ctx.state!=='running')throw new Error('The browser blocked audio. Check silent mode and tap the button again.');
+
+  // A short silent source unlocks Web Audio reliably on iOS Safari.
+  const unlock=ctx.createBufferSource();
+  unlock.buffer=ctx.createBuffer(1,1,ctx.sampleRate);
+  unlock.connect(ctx.destination);
+  unlock.start(0);
+
   enabled=true;
   master.gain.setTargetAtTime(Number($('volume').value),ctx.currentTime,.05);
 }
