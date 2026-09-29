@@ -34,6 +34,7 @@ button:disabled{opacity:.45;cursor:default}
 .fill{height:100%;width:0%;background:white;transition:width .15s linear}
 .panel{margin-top:18px;background:#111;border:1px solid #202020;border-radius:18px;padding:18px}
 .demo-box{margin:18px 0 4px;padding:18px;border:1px solid #343434;border-radius:18px;background:linear-gradient(135deg,#171717,#101924)}.demo-button{width:100%;background:#f5f5f5;color:#080808;font-weight:800;font-size:16px;letter-spacing:.015em}.demo-button.active{background:#92d8ff}.demo-box p{margin:10px 2px 0;font-size:14px}
+.demo-box .sound-note{color:#ff8fbd;font-weight:700}
 label{display:block;color:#aaa;margin-top:10px}
 input[type=range]{width:100%}
 #status{color:#c7c7c7}
@@ -90,6 +91,7 @@ input[type=range]{width:100%}
 <div class="demo-box">
   <button id="demo" class="demo-button" type="button" data-i18n="demoStart">Я БЕЗ ARDUINO — ХОЧУ ПРОСТО ПОСЛУШАТЬ</button>
   <p data-i18n="demoExplain">Это тестовый режим. Он имитирует подключённые датчики случайными плавными значениями и бесконечно создаёт музыку, которую можно оставить играть на фоне.</p>
+  <p class="sound-note" data-i18n="soundNote">Если звук не работает, отключите беззвучный режим на телефоне.</p>
 </div>
 
 <div class="grid">
@@ -431,6 +433,7 @@ const copy={
     demoStart:'Я БЕЗ ARDUINO — ХОЧУ ПРОСТО ПОСЛУШАТЬ',
     demoStop:'Остановить тестовый режим',
     demoExplain:'Это тестовый режим. Он имитирует подключённые датчики случайными плавными значениями и бесконечно создаёт музыку, которую можно оставить играть на фоне.',
+    soundNote:'Если звук не работает, отключите беззвучный режим на телефоне.',
     demoRunning:'Тестовый режим работает: датчики сейчас создаются автоматически.',
     instrumentTab:'Инструмент',
     guideTab:'Инструкция',
@@ -530,6 +533,7 @@ const copy={
     demoStart:'NO ARDUINO — I JUST WANT TO LISTEN',
     demoStop:'Stop demo mode',
     demoExplain:'This test mode simulates connected sensors with smooth random values and generates endless music you can leave playing in the background.',
+    soundNote:'If you cannot hear sound, turn off Silent Mode on your phone.',
     demoRunning:'Demo mode is running: sensor values are being generated automatically.',
     instrumentTab:'Instrument',
     guideTab:'Guide',
