@@ -33,6 +33,7 @@ button:disabled{opacity:.45;cursor:default}
 .bar{height:8px;background:#2a2a2a;border-radius:999px;overflow:hidden;margin-top:16px}
 .fill{height:100%;width:0%;background:white;transition:width .15s linear}
 .panel{margin-top:18px;background:#111;border:1px solid #202020;border-radius:18px;padding:18px}
+.demo-box{margin:18px 0 4px;padding:18px;border:1px solid #343434;border-radius:18px;background:linear-gradient(135deg,#171717,#101924)}.demo-button{width:100%;background:#f5f5f5;color:#080808;font-weight:800;font-size:16px;letter-spacing:.015em}.demo-button.active{background:#92d8ff}.demo-box p{margin:10px 2px 0;font-size:14px}
 label{display:block;color:#aaa;margin-top:10px}
 input[type=range]{width:100%}
 #status{color:#c7c7c7}
@@ -84,6 +85,11 @@ input[type=range]{width:100%}
   <button id="mode"></button>
   <button id="reset" data-i18n="reset">Сбросить диапазоны</button>
   <button id="stop" data-i18n="stop">Тишина</button>
+</div>
+
+<div class="demo-box">
+  <button id="demo" class="demo-button" type="button" data-i18n="demoStart">Я БЕЗ ARDUINO — ХОЧУ ПРОСТО ПОСЛУШАТЬ</button>
+  <p data-i18n="demoExplain">Это тестовый режим. Он имитирует подключённые датчики случайными плавными значениями и бесконечно создаёт музыку, которую можно оставить играть на фоне.</p>
 </div>
 
 <div class="grid">
@@ -422,6 +428,10 @@ const copy={
     soundMode:'Режим звука',
     rangesReset:'Диапазоны сброшены. Проведи каждый датчик от тени к яркому свету.',
     stopped:'Звук остановлен.',
+    demoStart:'Я БЕЗ ARDUINO — ХОЧУ ПРОСТО ПОСЛУШАТЬ',
+    demoStop:'Остановить тестовый режим',
+    demoExplain:'Это тестовый режим. Он имитирует подключённые датчики случайными плавными значениями и бесконечно создаёт музыку, которую можно оставить играть на фоне.',
+    demoRunning:'Тестовый режим работает: датчики сейчас создаются автоматически.',
     instrumentTab:'Инструмент',
     guideTab:'Инструкция',
     guideTitle:'Как собрать световой инструмент',
@@ -486,7 +496,8 @@ const copy={
     states:['ПОЧТИ ТИШИНА','ТЕНЬ','СРЕДНИЙ СВЕТ','ЯРКИЙ СВЕТ'],
     organNotes:['низкий орган','средний орган','высокий орган'],
     synthwaveNotes:['ретро-бас','аналоговый пэд','неоновый лид'],
-    whimsicalNotes:['мягкие колокольчики','игрушечные клавиши','искристые перезвоны']
+    whimsicalNotes:['мягкие колокольчики','игрушечные клавиши','искристые перезвоны'],
+    ambientNotes:['глубокая волна','тёплое облако','воздушное сияние']
   },
   en:{
     title:'Light Instrument',
@@ -516,6 +527,10 @@ const copy={
     soundMode:'Sound mode',
     rangesReset:'Ranges reset. Move each sensor from shadow to bright light.',
     stopped:'Sound stopped.',
+    demoStart:'NO ARDUINO — I JUST WANT TO LISTEN',
+    demoStop:'Stop demo mode',
+    demoExplain:'This test mode simulates connected sensors with smooth random values and generates endless music you can leave playing in the background.',
+    demoRunning:'Demo mode is running: sensor values are being generated automatically.',
     instrumentTab:'Instrument',
     guideTab:'Guide',
     guideTitle:'How to build the light instrument',
@@ -580,7 +595,8 @@ const copy={
     states:['ALMOST SILENT','SHADOW','MEDIUM LIGHT','BRIGHT LIGHT'],
     organNotes:['low organ','mid organ','high organ'],
     synthwaveNotes:['retro bass','analog pad','neon lead'],
-    whimsicalNotes:['soft bells','toy keys','sparkle chimes']
+    whimsicalNotes:['soft bells','toy keys','sparkle chimes'],
+    ambientNotes:['deep wave','warm cloud','airy shimmer']
   }
 };
 
@@ -609,6 +625,7 @@ function applyLanguage(nextLang){
   $('lang-ru').classList.toggle('active',lang==='ru');
   $('lang-en').classList.toggle('active',lang==='en');
   updateModeButton();
+  updateDemoButton();
   if(statusKey)$('status').textContent=t(statusKey);
   for(let i=0;i<3;i++){
     if($('v'+i).textContent==='—')$('s'+i).textContent=t('waiting');
@@ -627,10 +644,13 @@ let ctx=null, master=null, enabled=false, port=null, reader=null;
 let outputBus=null, delayNode=null, feedbackNode=null, wetGain=null, filterNode=null;
 let mins=[1023,1023,1023], maxs=[0,0,0], smooth=[0,0,0];
 let voices=[null,null,null], currentNote=[-1,-1,-1], lastNoteChange=[0,0,0];
+let demoActive=false,demoTimer=null,demoStartedAt=0;
+const demoPhase=[Math.random()*6.28,Math.random()*6.28,Math.random()*6.28];
+const demoSpeed=[.17,.13,.095];
 
 let mode='organ';
-const modeOrder=['organ','synthwave','whimsical'];
-const modeLabels={organ:'Organ',synthwave:'Synthwave',whimsical:'Whimsical'};
+const modeOrder=['organ','synthwave','whimsical','ambient'];
+const modeLabels={organ:'Organ',synthwave:'Synthwave',whimsical:'Whimsical',ambient:'Ambient'};
 
 const scales=[
   [38,41,43,45,48,50],
@@ -687,13 +707,20 @@ function applyModeFX(){
     filterNode.type='lowpass';
     filterNode.frequency.setTargetAtTime(4200,ctx.currentTime,.05);
     filterNode.Q.setTargetAtTime(1.15,ctx.currentTime,.05);
-  }else{
+  }else if(mode==='whimsical'){
     delayNode.delayTime.setTargetAtTime(.58,ctx.currentTime,.05);
     feedbackNode.gain.setTargetAtTime(.28,ctx.currentTime,.05);
     wetGain.gain.setTargetAtTime(.38,ctx.currentTime,.05);
     filterNode.type='lowpass';
     filterNode.frequency.setTargetAtTime(5200,ctx.currentTime,.05);
     filterNode.Q.setTargetAtTime(.5,ctx.currentTime,.05);
+  }else{
+    delayNode.delayTime.setTargetAtTime(.72,ctx.currentTime,.12);
+    feedbackNode.gain.setTargetAtTime(.60,ctx.currentTime,.12);
+    wetGain.gain.setTargetAtTime(.52,ctx.currentTime,.12);
+    filterNode.type='lowpass';
+    filterNode.frequency.setTargetAtTime(1750,ctx.currentTime,.12);
+    filterNode.Q.setTargetAtTime(.35,ctx.currentTime,.12);
   }
 }
 
@@ -711,10 +738,11 @@ function stopVoice(i){
 
   const t=ctx.currentTime;
   v.amp.gain.cancelScheduledValues(t);
-  v.amp.gain.setTargetAtTime(0.0001,t,.16);
+  const release=v.release||.16;
+  v.amp.gain.setTargetAtTime(0.0001,t,release);
 
-  v.oscs.forEach(o=>{try{o.stop(t+.9)}catch{}});
-  setTimeout(()=>{try{v.amp.disconnect()}catch{}},1100);
+  v.oscs.forEach(o=>{try{o.stop(t+release*5+.2)}catch{}});
+  setTimeout(()=>{try{v.amp.disconnect()}catch{}},release*5200+400);
 }
 
 function makeOrganVoice(i,midi,intensity){
@@ -782,6 +810,27 @@ function makeWhimsicalVoice(i,midi,intensity){
   return {amp,oscs,midi,oneshot:true};
 }
 
+function makeAmbientVoice(i,midi,intensity){
+  const now=ctx.currentTime, amp=ctx.createGain();
+  const target=[.13,.105,.075][i]*Math.pow(intensity,1.55);
+
+  amp.gain.setValueAtTime(0.0001,now);
+  amp.gain.exponentialRampToValueAtTime(Math.max(.0002,target),now+1.25);
+  amp.connect(outputBus);
+
+  const base=midiFreq(midi);
+  const defs=[['sine',-7,.58],['sine',7,.58],['triangle',0,.18]];
+  const oscs=defs.map(([type,det,gain])=>{
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.type=type; o.frequency.value=base; o.detune.value=det;
+    g.gain.value=gain;
+    o.connect(g); g.connect(amp); o.start();
+    return o;
+  });
+
+  return {amp,oscs,midi,release:.75};
+}
+
 function startVoice(i,midi,intensity){
   if(!enabled||!ctx)return;
   stopVoice(i);
@@ -789,7 +838,8 @@ function startVoice(i,midi,intensity){
   let v;
   if(mode==='organ')v=makeOrganVoice(i,midi,intensity);
   else if(mode==='synthwave')v=makeSynthwaveVoice(i,midi,intensity);
-  else v=makeWhimsicalVoice(i,midi,intensity);
+  else if(mode==='whimsical')v=makeWhimsicalVoice(i,midi,intensity);
+  else v=makeAmbientVoice(i,midi,intensity);
 
   voices[i]=v;
   currentNote[i]=midi;
@@ -802,9 +852,10 @@ function updateVoiceGain(i,intensity){
   let max=.12,power=1.35;
   if(mode==='organ'){max=[.20,.16,.12][i];power=1.35}
   if(mode==='synthwave'){max=[.15,.13,.10][i];power=1.2}
+  if(mode==='ambient'){max=[.13,.105,.075][i];power=1.55}
 
   const target=Math.max(.0001,max*Math.pow(intensity,power));
-  v.amp.gain.setTargetAtTime(target,ctx.currentTime,.30);
+  v.amp.gain.setTargetAtTime(target,ctx.currentTime,mode==='ambient'?.85:.30);
 }
 
 function chooseNoteIndex(i,d){
@@ -827,7 +878,8 @@ function updateMusic(){
     const holdMs =
       mode==='organ' ? [1400,1100,900][i] :
       mode==='synthwave' ? [900,700,540][i] :
-      [1700,1300,950][i];
+      mode==='whimsical' ? [1700,1300,950][i] :
+      [4200,3400,2700][i];
 
     const needsNew =
       currentNote[i]!==midi ||
@@ -847,7 +899,9 @@ function updateMusic(){
         ? t('organNotes')[i]
         : mode==='synthwave'
         ? t('synthwaveNotes')[i]
-        : t('whimsicalNotes')[i]);
+        : mode==='whimsical'
+        ? t('whimsicalNotes')[i]
+        : t('ambientNotes')[i]);
   }
 }
 
@@ -872,6 +926,61 @@ function processSensor(i,value){
   $('b'+i).style.width=(s*100)+'%';
 
   updateMusic();
+}
+
+function updateDemoButton(){
+  const button=$('demo');
+  if(!button)return;
+  button.textContent=t(demoActive?'demoStop':'demoStart');
+  button.classList.toggle('active',demoActive);
+}
+
+function renderDemoFrame(){
+  const seconds=(performance.now()-demoStartedAt)/1000;
+  const states=t('states');
+
+  for(let i=0;i<3;i++){
+    const wave=Math.sin(seconds*demoSpeed[i]+demoPhase[i])*.28;
+    const drift=Math.sin(seconds*demoSpeed[i]*.37+demoPhase[(i+1)%3])*.13;
+    const sparkle=Math.sin(seconds*(.41+i*.07)+demoPhase[(i+2)%3])*.045;
+    const target=Math.max(.09,Math.min(.94,.49+wave+drift+sparkle));
+    smooth[i]+=(target-smooth[i])*.075;
+
+    const s=smooth[i];
+    const value=Math.round(110+s*810);
+    const state=s<.08?states[0]:s<.30?states[1]:s<.68?states[2]:states[3];
+    $('v'+i).textContent=value;
+    $('p'+i).textContent=Math.round(s*100)+'%';
+    $('s'+i).textContent=state;
+    $('b'+i).style.width=(s*100)+'%';
+  }
+
+  $('raw').textContent='SIMULATED: '+smooth.map(v=>Math.round(110+v*810)).join(',');
+  updateMusic();
+}
+
+async function startDemo(){
+  if(demoActive)return;
+  await enableSound();
+  demoActive=true;
+  demoStartedAt=performance.now();
+  currentNote=[-1,-1,-1];
+  lastNoteChange=[0,0,0];
+  updateDemoButton();
+  renderDemoFrame();
+  demoTimer=setInterval(renderDemoFrame,120);
+  setStatus('demoRunning','ok');
+}
+
+function stopDemo(stopAudio=false){
+  demoActive=false;
+  if(demoTimer){clearInterval(demoTimer);demoTimer=null}
+  updateDemoButton();
+  if(stopAudio){
+    enabled=false;
+    for(let i=0;i<3;i++)stopVoice(i);
+    if(master&&ctx)master.gain.setTargetAtTime(0,ctx.currentTime,.08);
+  }
 }
 
 function parseLine(line){
@@ -938,10 +1047,20 @@ $('sound').onclick=()=>{
 };
 
 $('connect').onclick=()=>{
+  stopDemo(false);
   connect().catch(e=>{
     $('connect').disabled=false;
     setStatus('connectError','bad',e.message);
   });
+};
+
+$('demo').onclick=()=>{
+  if(demoActive){
+    stopDemo(true);
+    setStatus('stopped');
+  }else{
+    startDemo().catch(e=>setStatus('soundError','text',e.message));
+  }
 };
 
 $('mode').onclick=()=>{
@@ -969,6 +1088,7 @@ $('reset').onclick=()=>{
 };
 
 $('stop').onclick=()=>{
+  stopDemo(false);
   enabled=false;
   for(let i=0;i<3;i++)stopVoice(i);
   if(master&&ctx)master.gain.setTargetAtTime(0,ctx.currentTime,.05);
