@@ -1,0 +1,1024 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Световой инструмент · Light Organ</title>
+<style>
+:root{
+  --bg:#090909;--panel:#141414;--line:#252525;--text:#f5f5f5;--muted:#8b8b8b;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:28px}
+main{max-width:1050px;margin:auto}
+[hidden]{display:none!important}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:22px;flex-wrap:wrap}
+.lang-toggle,.view-tabs{border:1px solid var(--line);border-radius:999px;display:flex;overflow:hidden;background:#101010}
+.lang-toggle button,.view-tabs button{border-radius:0;padding:8px 12px;background:transparent;color:#777;font-size:13px;letter-spacing:.06em}
+.lang-toggle button.active,.view-tabs button.active{background:white;color:black}
+h1{font-size:46px;letter-spacing:-1.7px;margin:0 0 8px}
+p{color:var(--muted);line-height:1.5}
+.controls{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0}
+button,input{font:inherit}
+button{border:0;border-radius:12px;padding:13px 18px;cursor:pointer;background:#1c1c1c;color:white}
+button.primary{background:white;color:black}
+button:disabled{opacity:.45;cursor:default}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:24px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:20px;min-height:250px}
+.kicker{font-size:12px;color:#777;text-transform:uppercase;letter-spacing:.12em}
+.value{font-size:50px;font-weight:700;line-height:1;margin-top:14px}
+.percent{font-size:22px;margin-top:8px}
+.state{margin-top:10px;color:#d2d2d2}
+.note{margin-top:12px;color:#9b9b9b;font-size:14px;min-height:42px}
+.bar{height:8px;background:#2a2a2a;border-radius:999px;overflow:hidden;margin-top:16px}
+.fill{height:100%;width:0%;background:white;transition:width .15s linear}
+.panel{margin-top:18px;background:#111;border:1px solid #202020;border-radius:18px;padding:18px}
+label{display:block;color:#aaa;margin-top:10px}
+input[type=range]{width:100%}
+#status{color:#c7c7c7}
+#raw{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#858585;word-break:break-all}
+.ok{color:#86f59a}.bad{color:#ff8d8d}
+.small{font-size:13px;color:#777}
+.credit{margin-top:18px;color:#686868;font-size:13px;text-align:left}
+.credit a{color:#8d8d8d;text-decoration:none}
+.credit a:hover{color:#f5f5f5}
+.guide{margin-top:24px}
+.guide h2{font-size:30px;letter-spacing:-.8px;margin:0 0 10px}
+.guide h3{font-size:18px;margin:0 0 10px}
+.guide-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:18px}
+.guide-card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px}
+.guide-card.wide{grid-column:1/-1}.kid-steps{counter-reset:build;list-style:none!important;padding:0!important;display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.kid-steps li{counter-increment:build;background:#0d0d0d;border:1px solid #252525;border-radius:14px;padding:14px 14px 14px 52px!important;position:relative;margin:0!important}.kid-steps li:before{content:counter(build);position:absolute;left:14px;top:13px;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:#fff;color:#000;font-weight:800}.kid-note{background:#221d0d;border:1px solid #665520;border-radius:12px;padding:12px 14px;color:#eadb9b!important}
+.guide-card ul,.guide-card ol{margin:10px 0 0;padding-left:22px;color:#cfcfcf;line-height:1.55}
+.guide-card li{margin:6px 0}
+.guide-card a{color:#fff;text-underline-offset:3px}.mini-step{display:block;width:100%;max-width:240px;height:92px;margin:12px 0 0;background:#181818;border:1px solid #303030;border-radius:12px}.mini-step text{font:700 10px system-ui}.ide-link{display:inline-flex;align-items:center;gap:8px;background:#087f8c;border-radius:10px;padding:10px 13px;text-decoration:none;font-weight:700;margin:4px 0 8px}.ide-link:hover{background:#0a9aa9}
+.photo-guide img{border:1px solid var(--line);border-radius:16px;display:block;margin-top:14px;width:100%}
+.diagram{background:#070707;border:1px solid var(--line);border-radius:18px;margin-top:16px;padding:16px;overflow:auto}
+.diagram svg{display:block;width:100%;min-width:720px;height:auto}
+.codebox{background:#070707;border:1px solid var(--line);border-radius:14px;color:#d8d8d8;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;margin:12px 0 0;overflow:auto;padding:14px;white-space:pre}
+.model-card{margin-top:16px;overflow:hidden;padding:0}.model-copy{padding:18px 18px 0}.model-toolbar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:10px 18px 16px}.model-toolbar button{padding:9px 13px;font-size:13px}.model-toolbar .hint{font-size:13px;color:#777;margin-left:auto}.model-viewport{height:570px;position:relative;perspective:1100px;background:radial-gradient(circle at 50% 38%,#292929 0,#101010 52%,#080808 100%);overflow:hidden;touch-action:none;cursor:grab}.model-viewport.dragging{cursor:grabbing}.model-stage{position:absolute;left:50%;top:50%;width:900px;height:520px;transform-style:preserve-3d;transform:translate(-50%,-50%) rotateX(54deg) rotateZ(-7deg) scale(.88);transition:transform .12s ease-out}.model-stage.dragging{transition:none}.model-stage svg{width:100%;height:100%;overflow:visible;filter:drop-shadow(0 35px 26px #000b)}
+.wire-visible{fill:none;stroke-width:10;stroke-linecap:round;filter:drop-shadow(0 5px 2px #0007)}.wire-hit{fill:none;stroke:transparent;stroke-width:30;cursor:pointer}.wire-group:hover .wire-visible,.wire-group:focus .wire-visible{stroke-width:15;filter:drop-shadow(0 0 7px currentColor)}.wire-group:focus{outline:none}.part-hit{cursor:pointer}.part-hit:hover .part-shape,.part-hit:focus .part-shape{stroke:#fff;stroke-width:4}.pin-label{font:700 16px ui-monospace,SFMono-Regular,Menlo,monospace;fill:#fff}.board-label{font:700 22px system-ui;fill:#fff}.model-popover{position:absolute;z-index:4;width:min(330px,calc(100% - 28px));background:#f5f5f5;color:#111;border-radius:16px;padding:16px 42px 16px 16px;box-shadow:0 18px 60px #000c;left:20px;bottom:20px}.model-popover h4{font-size:17px;margin:0 0 6px}.model-popover p{color:#444;font-size:14px;margin:0}.model-popover button{position:absolute;right:8px;top:8px;padding:6px 10px;background:#ddd;color:#111}.model-legend{display:flex;gap:12px;flex-wrap:wrap;padding:14px 18px 18px}.model-key{border:1px solid #2b2b2b;border-radius:999px;padding:7px 10px;color:#bbb;font-size:12px;cursor:pointer}.model-key i{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:7px}
+@media(max-width:760px){.grid,.guide-grid,.kid-steps{grid-template-columns:1fr}.topbar{align-items:flex-start}.diagram svg{min-width:620px}}
+@media(max-width:760px){.model-viewport{height:430px}.model-stage{transform:translate(-50%,-50%) rotateX(54deg) rotateZ(-7deg) scale(.58)}.model-toolbar .hint{width:100%;margin-left:0}}
+</style>
+</head>
+<body>
+<main>
+<div class="topbar">
+  <div class="view-tabs" aria-label="View">
+    <button id="tab-instrument" class="active" type="button" data-i18n="instrumentTab">Инструмент</button>
+    <button id="tab-guide" type="button" data-i18n="guideTab">Инструкция</button>
+  </div>
+  <div class="lang-toggle" aria-label="Language">
+    <button id="lang-ru" class="active" type="button">RU</button>
+    <button id="lang-en" type="button">EN</button>
+  </div>
+</div>
+
+<h1 data-i18n="title">Световой инструмент</h1>
+<p data-i18n="description">Световой инструмент превращает движение рук, тени и вспышки света в медленную живую композицию. Три фоторезистора управляют тремя слоями звука: низким дроном, теплым органом и высоким воздушным сиянием.</p>
+
+<section id="instrument-view">
+<div class="controls">
+  <button id="sound" class="primary" data-i18n="sound">1. Включить звук</button>
+  <button id="connect" data-i18n="connect">2. Подключить Arduino</button>
+  <button id="mode"></button>
+  <button id="reset" data-i18n="reset">Сбросить диапазоны</button>
+  <button id="stop" data-i18n="stop">Тишина</button>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <div class="kicker" data-i18n="sensor0">Датчик 1 · A0 · низкий слой</div>
+    <div class="value" id="v0">—</div>
+    <div class="percent" id="p0">—</div>
+    <div class="state" id="s0" data-i18n="waiting">ожидание</div>
+    <div class="bar"><div class="fill" id="b0"></div></div>
+    <div class="note" id="n0" data-i18n="note0">очень низкий дрон</div>
+  </div>
+
+  <div class="card">
+    <div class="kicker" data-i18n="sensor1">Датчик 2 · A1 · средний слой</div>
+    <div class="value" id="v1">—</div>
+    <div class="percent" id="p1">—</div>
+    <div class="state" id="s1" data-i18n="waiting">ожидание</div>
+    <div class="bar"><div class="fill" id="b1"></div></div>
+    <div class="note" id="n1" data-i18n="note1">средний орган</div>
+  </div>
+
+  <div class="card">
+    <div class="kicker" data-i18n="sensor2">Датчик 3 · A2 · высокий слой</div>
+    <div class="value" id="v2">—</div>
+    <div class="percent" id="p2">—</div>
+    <div class="state" id="s2" data-i18n="waiting">ожидание</div>
+    <div class="bar"><div class="fill" id="b2"></div></div>
+    <div class="note" id="n2" data-i18n="note2">высокий воздушный слой</div>
+  </div>
+</div>
+
+<div class="panel">
+  <label><span data-i18n="volume">Общая громкость</span>
+    <input id="volume" type="range" min="0" max="0.45" step="0.01" value="0.24">
+  </label>
+  <p id="status" data-i18n="initialStatus">Сначала включи звук, затем подключи Arduino.</p>
+  <div id="raw">RAW SERIAL: —</div>
+  <p class="small" data-i18n="serialNote">Важно: Serial Monitor / Serial Plotter в Arduino IDE должны быть закрыты, иначе браузер не сможет читать порт.</p>
+</div>
+</section>
+
+<section id="guide-view" class="guide" hidden>
+  <h2 data-i18n="guideTitle">Как собрать световой инструмент</h2>
+  <p data-i18n="guideIntro">Это версия для новичков: сначала собираем простую схему с тремя датчиками света, потом загружаем код в Arduino, проверяем поток чисел и подключаем страницу к плате через браузер.</p>
+
+  <div class="guide-grid">
+    <div class="guide-card">
+      <h3 data-i18n="buyTitle">Что купить</h3>
+      <ul>
+        <li data-i18n="buy1">Arduino Uno или Nano. Uno удобнее для первого раза.</li>
+        <li data-i18n="buy2">USB-кабель для Arduino и компьютер с браузером.</li>
+        <li data-i18n="buy3">Макетная плата breadboard.</li>
+        <li data-i18n="buy4">3 фоторезистора LDR — это датчики, которые меняют сопротивление от света.</li>
+        <li data-i18n="buy5">3 резистора 10 кОм. Они нужны, чтобы Arduino могла читать свет как число.</li>
+        <li data-i18n="buy6">Провода-перемычки male-to-male.</li>
+      </ul>
+    </div>
+
+    <div class="guide-card">
+      <h3 data-i18n="ideaTitle">Как это работает</h3>
+      <p data-i18n="ideaText">Каждый датчик собран как делитель напряжения: свет меняет сопротивление фоторезистора, Arduino получает число на A0, A1 или A2, а сайт превращает эти числа в звук.</p>
+      <ol>
+        <li data-i18n="idea1">Больше света — значение меняется вверх или вниз в зависимости от положения LDR и резистора.</li>
+        <li data-i18n="idea2">Сайт сам калибрует минимум и максимум, поэтому просто проведи рукой от тени к яркому свету.</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="guide-card photo-guide">
+    <h3 data-i18n="wireTitle">Какие провода нужны и какой конец куда вставлять</h3>
+    <p data-i18n="wireIntro">Тебе нужны jumper wires / Dupont wires. У провода «папа–мама» один конец острый, а второй — чёрная штучка с отверстием.</p>
+    <img src="svetovoi-instrument-connectors.png" alt="Male-to-female jumper wire and LDR photoresistor leg connection">
+    <ul>
+      <li data-i18n="wire1">Конец «папа» / male pin — это острый металлический штырек. Его вставляют в Arduino или в отверстие breadboard.</li>
+      <li data-i18n="wire2">Конец «мама» / female socket — это чёрная штучка с отверстием. Её надевают прямо на ножку фоторезистора LDR.</li>
+      <li data-i18n="wire4">На каждую ножку LDR надень конец «мама» (чёрную штучку с отверстием) отдельного провода. Два острых конца «папа» вставь в разные места breadboard, как показано ниже.</li>
+    </ul>
+  </div>
+
+  <div class="guide-card model-card">
+    <div class="model-copy"><h3 data-i18n="modelTitle">Интерактивная 3D-сборка</h3><p data-i18n="modelIntro">Поворачивай и приближай модель. Нажми на деталь, чтобы увидеть подсказку.</p></div>
+    <div class="model-toolbar"><button id="model-reset" type="button" data-i18n="modelReset">Вернуть вид</button><button id="model-top" type="button" data-i18n="modelTop">Вид сверху</button><span class="hint" data-i18n="modelHint">↔ вращай · колесо — масштаб · нажимай на детали</span></div>
+    <div id="model-viewport" class="model-viewport" aria-label="Interactive 3D Arduino wiring model"><div id="model-stage" class="model-stage">
+      <svg viewBox="0 0 900 520" role="img" aria-label="Arduino Uno and breadboard wired for three light sensors">
+        <defs><pattern id="holes" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="2.2" fill="#aaa"/></pattern></defs>
+        <rect x="28" y="62" width="350" height="392" rx="25" fill="#075778" stroke="#22a9cf" stroke-width="4"/><rect x="48" y="83" width="93" height="74" rx="8" fill="#bbb" stroke="#eee" stroke-width="4"/><rect x="50" y="95" width="49" height="50" fill="#333"/><rect x="96" y="343" width="230" height="73" rx="10" fill="#171717"/><rect x="70" y="190" width="250" height="35" rx="7" fill="#111"/>
+        <text x="203" y="285" text-anchor="middle" class="board-label">ARDUINO UNO</text>
+        <g class="part-hit" tabindex="0" data-info="usb"><rect class="part-shape" x="31" y="102" width="22" height="34" rx="3" fill="#83a4b0"/><text x="70" y="126" class="pin-label">USB</text></g><g class="part-hit" tabindex="0" data-info="power"><rect class="part-shape" x="245" y="404" width="28" height="18" rx="4" fill="#e65747"/><text x="258" y="446" text-anchor="middle" class="pin-label">5V</text></g><g class="part-hit" tabindex="0" data-info="ground"><rect class="part-shape" x="292" y="404" width="28" height="18" rx="4" fill="#303030" stroke="#aaa"/><text x="306" y="446" text-anchor="middle" class="pin-label">GND</text></g>
+        <g class="part-hit" tabindex="0" data-info="a0"><circle class="part-shape" cx="336" cy="345" r="12" fill="#36b9ff"/><text x="336" y="326" text-anchor="middle" class="pin-label">A0</text></g><g class="part-hit" tabindex="0" data-info="a1"><circle class="part-shape" cx="336" cy="378" r="12" fill="#ffc527"/><text x="362" y="384" class="pin-label">A1</text></g><g class="part-hit" tabindex="0" data-info="a2"><circle class="part-shape" cx="336" cy="411" r="12" fill="#9d6cff"/><text x="362" y="417" class="pin-label">A2</text></g>
+        <rect x="420" y="42" width="450" height="435" rx="23" fill="#f1eee6" stroke="#c6c1b5" stroke-width="5"/><rect x="447" y="68" width="396" height="38" rx="9" fill="#ffd9d5"/><rect x="447" y="412" width="396" height="38" rx="9" fill="#d8e8ff"/><rect x="447" y="125" width="396" height="259" rx="8" fill="url(#holes)"/><rect x="447" y="246" width="396" height="18" fill="#d3cec3"/><text x="454" y="94" fill="#d94035" font-size="24" font-weight="700">+ 5V</text><text x="454" y="440" fill="#347ddd" font-size="24" font-weight="700">− GND</text>
+        <g class="wire-group" tabindex="0" data-info="power"><path class="wire-visible" stroke="#f04c45" d="M258 413 C365 490 405 140 470 86"/><path class="wire-hit" d="M258 413 C365 490 405 140 470 86"/></g><g class="wire-group" tabindex="0" data-info="ground"><path class="wire-visible" stroke="#555" d="M306 413 C386 500 412 460 480 431"/><path class="wire-hit" d="M306 413 C386 500 412 460 480 431"/></g><g class="wire-group" tabindex="0" data-info="a0"><path class="wire-visible" stroke="#36b9ff" d="M336 345 C425 345 480 172 580 172"/><path class="wire-hit" d="M336 345 C425 345 480 172 580 172"/></g><g class="wire-group" tabindex="0" data-info="a1"><path class="wire-visible" stroke="#ffc527" d="M336 378 C430 420 480 252 650 252"/><path class="wire-hit" d="M336 378 C430 420 480 252 650 252"/></g><g class="wire-group" tabindex="0" data-info="a2"><path class="wire-visible" stroke="#9d6cff" d="M336 411 C450 500 540 332 720 332"/><path class="wire-hit" d="M336 411 C450 500 540 332 720 332"/></g>
+        <!-- Each remote LDR has two separate female leads, matching the close-up photo. -->
+        <g class="part-hit" tabindex="0" data-info="sensor0"><path d="M525 20 C500 55 515 100 580 172" fill="none" stroke="#555" stroke-width="9" stroke-linecap="round"/><path d="M545 20 C590 45 610 64 620 86" fill="none" stroke="#f04c45" stroke-width="9" stroke-linecap="round"/><rect x="512" y="8" width="20" height="18" rx="4" fill="#161616"/><rect x="538" y="8" width="20" height="18" rx="4" fill="#161616"/><line x1="522" y1="8" x2="528" y2="-4" stroke="#aaa" stroke-width="3"/><line x1="548" y1="8" x2="542" y2="-4" stroke="#aaa" stroke-width="3"/><ellipse class="part-shape" cx="535" cy="-12" rx="24" ry="15" fill="#ddbca4" stroke="#735841" stroke-width="3"/><text x="535" y="-34" text-anchor="middle" fill="#fff" font-weight="700">LDR 1 · 2 провода</text></g>
+        <g class="part-hit" tabindex="0" data-info="sensor1"><path d="M645 20 C615 80 620 170 650 252" fill="none" stroke="#8f62aa" stroke-width="9" stroke-linecap="round"/><path d="M665 20 C715 45 700 65 690 86" fill="none" stroke="#eee" stroke-width="9" stroke-linecap="round"/><rect x="632" y="8" width="20" height="18" rx="4" fill="#161616"/><rect x="658" y="8" width="20" height="18" rx="4" fill="#161616"/><line x1="642" y1="8" x2="648" y2="-4" stroke="#aaa" stroke-width="3"/><line x1="668" y1="8" x2="662" y2="-4" stroke="#aaa" stroke-width="3"/><ellipse class="part-shape" cx="655" cy="-12" rx="24" ry="15" fill="#ddbca4" stroke="#735841" stroke-width="3"/><text x="655" y="-34" text-anchor="middle" fill="#fff" font-weight="700">LDR 2 · 2 провода</text></g>
+        <g class="part-hit" tabindex="0" data-info="sensor2"><path d="M765 20 C745 110 735 230 720 332" fill="none" stroke="#11a395" stroke-width="9" stroke-linecap="round"/><path d="M785 20 C820 45 790 70 760 86" fill="none" stroke="#ffc527" stroke-width="9" stroke-linecap="round"/><rect x="752" y="8" width="20" height="18" rx="4" fill="#161616"/><rect x="778" y="8" width="20" height="18" rx="4" fill="#161616"/><line x1="762" y1="8" x2="768" y2="-4" stroke="#aaa" stroke-width="3"/><line x1="788" y1="8" x2="782" y2="-4" stroke="#aaa" stroke-width="3"/><ellipse class="part-shape" cx="775" cy="-12" rx="24" ry="15" fill="#ddbca4" stroke="#735841" stroke-width="3"/><text x="775" y="-34" text-anchor="middle" fill="#fff" font-weight="700">LDR 3 · 2 провода</text></g>
+        <!-- Both bare resistor legs are shown inserted into separate breadboard nodes. -->
+        <g class="part-hit" tabindex="0" data-info="resistors"><path class="part-shape" d="M580 172 H605 l8 -8 14 16 14 -16 14 16 8 -8 H688 M650 252 H675 l8 -8 14 16 14 -16 14 16 8 -8 H758 M720 332 H745 l8 -8 14 16 14 -16 14 16 8 -8 H828" fill="none" stroke="#a86e2b" stroke-width="7"/><path d="M688 172 V431 M758 252 V431 M828 332 V431" fill="none" stroke="#777" stroke-width="4"/><g fill="#151515" stroke="#ddd" stroke-width="2"><circle cx="580" cy="172" r="8"/><circle cx="688" cy="172" r="8"/><circle cx="650" cy="252" r="8"/><circle cx="758" cy="252" r="8"/><circle cx="720" cy="332" r="8"/><circle cx="828" cy="332" r="8"/></g></g>
+      </svg>
+    </div><div id="model-popover" class="model-popover" hidden><button id="model-close" type="button" aria-label="Close">×</button><h4 id="model-pop-title"></h4><p id="model-pop-text"></p></div></div>
+    <div class="model-legend"><span class="model-key" data-info="power"><i style="background:#f04c45"></i>5V</span><span class="model-key" data-info="ground"><i style="background:#666"></i>GND</span><span class="model-key" data-info="a0"><i style="background:#36b9ff"></i>A0</span><span class="model-key" data-info="a1"><i style="background:#ffc527"></i>A1</span><span class="model-key" data-info="a2"><i style="background:#9d6cff"></i>A2</span></div>
+  </div>
+
+  <div class="guide-card diagram">
+    <h3 data-i18n="diagramTitle">Схема подключения</h3>
+    <svg viewBox="0 0 1180 760" role="img" aria-label="Detailed Arduino breadboard wiring diagram">
+      <rect x="28" y="84" width="270" height="500" rx="28" fill="#101010" stroke="#2d2d2d"/>
+      <rect x="58" y="144" width="210" height="350" rx="18" fill="#151515" stroke="#333"/>
+      <text x="163" y="122" fill="#f5f5f5" text-anchor="middle" font-size="25" font-family="system-ui">Arduino Uno</text>
+
+      <g font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="18">
+        <rect x="70" y="172" width="84" height="32" rx="8" fill="#24170c" stroke="#ff7a1a" stroke-width="2"/>
+        <text x="112" y="194" fill="#ffcf9a" text-anchor="middle">5V</text>
+        <rect x="70" y="236" width="84" height="32" rx="8" fill="#0d1a20" stroke="#57d5ff" stroke-width="2"/>
+        <text x="112" y="258" fill="#a7ecff" text-anchor="middle">A0</text>
+        <rect x="70" y="300" width="84" height="32" rx="8" fill="#0d1a20" stroke="#7aff8a" stroke-width="2"/>
+        <text x="112" y="322" fill="#b7ffbf" text-anchor="middle">A1</text>
+        <rect x="70" y="364" width="84" height="32" rx="8" fill="#150f22" stroke="#cf8cff" stroke-width="2"/>
+        <text x="112" y="386" fill="#e1c2ff" text-anchor="middle">A2</text>
+        <rect x="70" y="428" width="84" height="32" rx="8" fill="#1a1a1a" stroke="#888" stroke-width="2"/>
+        <text x="112" y="450" fill="#d0d0d0" text-anchor="middle">GND</text>
+      </g>
+
+      <rect x="360" y="58" width="760" height="580" rx="28" fill="#f4efe2" stroke="#c7c0af" stroke-width="2"/>
+      <text x="740" y="38" fill="#f5f5f5" text-anchor="middle" font-size="23" font-family="system-ui">Breadboard: вид сверху</text>
+      <rect x="390" y="86" width="700" height="52" rx="14" fill="#ffe2d0" stroke="#ffb48a"/>
+      <rect x="390" y="556" width="700" height="52" rx="14" fill="#ddecff" stroke="#98c2ff"/>
+      <text x="374" y="116" fill="#ff6a00" font-size="22" font-family="system-ui">+</text>
+      <text x="1098" y="116" fill="#ff6a00" font-size="16" font-family="system-ui">красная линия 5V</text>
+      <text x="374" y="587" fill="#377dff" font-size="22" font-family="system-ui">-</text>
+      <text x="1098" y="587" fill="#377dff" font-size="16" font-family="system-ui">синяя линия GND</text>
+      <rect x="700" y="162" width="20" height="360" rx="10" fill="#ded6c7"/>
+
+      <g fill="#c4bbaa">
+        <circle cx="430" cy="108" r="5"/><circle cx="470" cy="108" r="5"/><circle cx="510" cy="108" r="5"/><circle cx="550" cy="108" r="5"/><circle cx="590" cy="108" r="5"/><circle cx="630" cy="108" r="5"/><circle cx="780" cy="108" r="5"/><circle cx="820" cy="108" r="5"/><circle cx="860" cy="108" r="5"/><circle cx="900" cy="108" r="5"/><circle cx="940" cy="108" r="5"/><circle cx="980" cy="108" r="5"/>
+        <circle cx="430" cy="582" r="5"/><circle cx="470" cy="582" r="5"/><circle cx="510" cy="582" r="5"/><circle cx="550" cy="582" r="5"/><circle cx="590" cy="582" r="5"/><circle cx="630" cy="582" r="5"/><circle cx="780" cy="582" r="5"/><circle cx="820" cy="582" r="5"/><circle cx="860" cy="582" r="5"/><circle cx="900" cy="582" r="5"/><circle cx="940" cy="582" r="5"/><circle cx="980" cy="582" r="5"/>
+        <circle cx="430" cy="220" r="5"/><circle cx="470" cy="220" r="5"/><circle cx="510" cy="220" r="5"/><circle cx="550" cy="220" r="5"/><circle cx="590" cy="220" r="5"/><circle cx="780" cy="220" r="5"/><circle cx="820" cy="220" r="5"/><circle cx="860" cy="220" r="5"/><circle cx="900" cy="220" r="5"/><circle cx="940" cy="220" r="5"/>
+        <circle cx="430" cy="340" r="5"/><circle cx="470" cy="340" r="5"/><circle cx="510" cy="340" r="5"/><circle cx="550" cy="340" r="5"/><circle cx="590" cy="340" r="5"/><circle cx="780" cy="340" r="5"/><circle cx="820" cy="340" r="5"/><circle cx="860" cy="340" r="5"/><circle cx="900" cy="340" r="5"/><circle cx="940" cy="340" r="5"/>
+        <circle cx="430" cy="460" r="5"/><circle cx="470" cy="460" r="5"/><circle cx="510" cy="460" r="5"/><circle cx="550" cy="460" r="5"/><circle cx="590" cy="460" r="5"/><circle cx="780" cy="460" r="5"/><circle cx="820" cy="460" r="5"/><circle cx="860" cy="460" r="5"/><circle cx="900" cy="460" r="5"/><circle cx="940" cy="460" r="5"/>
+      </g>
+
+      <g opacity=".22">
+        <rect x="402" y="202" width="615" height="36" rx="10" fill="#5ed8ff"/>
+        <rect x="402" y="322" width="615" height="36" rx="10" fill="#7aff8a"/>
+        <rect x="402" y="442" width="615" height="36" rx="10" fill="#cf8cff"/>
+      </g>
+      <g font-family="system-ui" font-size="15" fill="#111">
+        <text x="1015" y="225">ряд 10: LDR1 + R1 + A0</text>
+        <text x="1015" y="345">ряд 16: LDR2 + R2 + A1</text>
+        <text x="1015" y="465">ряд 22: LDR3 + R3 + A2</text>
+      </g>
+
+      <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M154 188 C250 132,294 108,390 108" stroke="#ff6a00" stroke-width="8"/>
+        <path d="M154 444 C250 564,294 582,390 582" stroke="#626262" stroke-width="8"/>
+        <path d="M154 252 C260 252,308 220,430 220" stroke="#5ed8ff" stroke-width="7"/>
+        <path d="M154 316 C258 316,306 340,430 340" stroke="#7aff8a" stroke-width="7"/>
+        <path d="M154 380 C258 390,306 460,430 460" stroke="#cf8cff" stroke-width="7"/>
+      </g>
+
+      <g font-family="system-ui" text-anchor="middle">
+        <g transform="translate(0 0)">
+          <text x="650" y="186" fill="#111" font-size="18">Датчик 1</text>
+          <line x1="550" y1="108" x2="550" y2="182" stroke="#ff6a00" stroke-width="5"/>
+          <path d="M518 182 L582 182 M532 168 L546 196 M556 168 L570 196" stroke="#111" stroke-width="3"/>
+          <line x1="550" y1="182" x2="550" y2="220" stroke="#111" stroke-width="4"/>
+          <circle cx="430" cy="220" r="10" fill="#5ed8ff" stroke="#111" stroke-width="2"/>
+          <text x="430" y="197" fill="#111" font-size="14">A0 сюда</text>
+          <path d="M780 220 L820 220 L780 242 L820 242 L780 264 L820 264" fill="none" stroke="#111" stroke-width="3"/>
+          <line x1="780" y1="220" x2="550" y2="220" stroke="#111" stroke-width="4"/>
+          <line x1="820" y1="264" x2="820" y2="582" stroke="#626262" stroke-width="5"/>
+          <text x="862" y="248" fill="#111" font-size="15">R1 10 kΩ</text>
+        </g>
+        <g transform="translate(0 120)">
+          <text x="650" y="186" fill="#111" font-size="18">Датчик 2</text>
+          <line x1="550" y1="-12" x2="550" y2="182" stroke="#ff6a00" stroke-width="5"/>
+          <path d="M518 182 L582 182 M532 168 L546 196 M556 168 L570 196" stroke="#111" stroke-width="3"/>
+          <line x1="550" y1="182" x2="550" y2="220" stroke="#111" stroke-width="4"/>
+          <circle cx="430" cy="220" r="10" fill="#7aff8a" stroke="#111" stroke-width="2"/>
+          <text x="430" y="197" fill="#111" font-size="14">A1 сюда</text>
+          <path d="M780 220 L820 220 L780 242 L820 242 L780 264 L820 264" fill="none" stroke="#111" stroke-width="3"/>
+          <line x1="780" y1="220" x2="550" y2="220" stroke="#111" stroke-width="4"/>
+          <line x1="820" y1="264" x2="820" y2="462" stroke="#626262" stroke-width="5"/>
+          <text x="862" y="248" fill="#111" font-size="15">R2 10 kΩ</text>
+        </g>
+        <g transform="translate(0 240)">
+          <text x="650" y="186" fill="#111" font-size="18">Датчик 3</text>
+          <line x1="550" y1="-132" x2="550" y2="182" stroke="#ff6a00" stroke-width="5"/>
+          <path d="M518 182 L582 182 M532 168 L546 196 M556 168 L570 196" stroke="#111" stroke-width="3"/>
+          <line x1="550" y1="182" x2="550" y2="220" stroke="#111" stroke-width="4"/>
+          <circle cx="430" cy="220" r="10" fill="#cf8cff" stroke="#111" stroke-width="2"/>
+          <text x="430" y="197" fill="#111" font-size="14">A2 сюда</text>
+          <path d="M780 220 L820 220 L780 242 L820 242 L780 264 L820 264" fill="none" stroke="#111" stroke-width="3"/>
+          <line x1="780" y1="220" x2="550" y2="220" stroke="#111" stroke-width="4"/>
+          <line x1="820" y1="264" x2="820" y2="342" stroke="#626262" stroke-width="5"/>
+          <text x="862" y="248" fill="#111" font-size="15">R3 10 kΩ</text>
+        </g>
+      </g>
+
+      <g font-family="system-ui" font-size="15">
+        <rect x="36" y="658" width="1088" height="74" rx="18" fill="#101010" stroke="#292929"/>
+        <circle cx="64" cy="684" r="7" fill="#ff6a00"/><text x="82" y="689" fill="#ddd">5V: Arduino 5V → красная + линия</text>
+        <circle cx="358" cy="684" r="7" fill="#626262"/><text x="376" y="689" fill="#ddd">GND: Arduino GND → синяя - линия</text>
+        <circle cx="668" cy="684" r="7" fill="#5ed8ff"/><text x="686" y="689" fill="#ddd">A0 → ряд 10</text>
+        <circle cx="800" cy="684" r="7" fill="#7aff8a"/><text x="818" y="689" fill="#ddd">A1 → ряд 16</text>
+        <circle cx="932" cy="684" r="7" fill="#cf8cff"/><text x="950" y="689" fill="#ddd">A2 → ряд 22</text>
+        <text x="64" y="714" fill="#aaa">В каждом ряду: одна ножка LDR + один конец резистора + аналоговый провод A0/A1/A2 сидят в одной горизонтальной строке.</text>
+      </g>
+    </svg>
+    <p class="small" data-i18n="diagramNote">Смотри на цветные провода: оранжевый 5V идет в красную линию breadboard, серый GND идет в синюю линию, а A0/A1/A2 идут в точки, где встречаются ножка LDR и ножка резистора 10 кОм.</p>
+    <ul>
+      <li data-i18n="plug1">Каждый LDR ставится между красной линией 5V и своей рабочей строкой.</li>
+      <li data-i18n="plug2">Каждый резистор 10 кОм ставится между этой же рабочей строкой и синей линией GND.</li>
+      <li data-i18n="plug3">A0, A1 и A2 подключаются именно в рабочие строки, не в 5V и не в GND.</li>
+    </ul>
+  </div>
+
+  <div class="guide-grid">
+    <div class="guide-card wide">
+      <h3 data-i18n="breadboardTitle">Как читать дырки на breadboard</h3>
+      <p data-i18n="breadboardText">Сверху написаны буквы A, B, C, D, E, потом идёт щель, затем F, G, H, I, J. Сбоку написаны цифры. Название дырки получается из буквы и цифры: например A10.</p>
+      <svg viewBox="0 0 760 230" role="img" aria-label="Standard breadboard rows A to J and numbered row 10" style="display:block;width:100%;height:auto;margin-top:12px;background:#0c0c0c;border-radius:14px">
+        <rect x="28" y="35" width="704" height="164" rx="18" fill="#eee9df"/>
+        <g font-family="system-ui" font-size="16" text-anchor="middle" fill="#222"><text x="130" y="28">A</text><text x="180" y="28">B</text><text x="230" y="28">C</text><text x="280" y="28">D</text><text x="330" y="28">E</text><text x="430" y="28">F</text><text x="480" y="28">G</text><text x="530" y="28">H</text><text x="580" y="28">I</text><text x="630" y="28">J</text><text x="70" y="98">10</text><text x="70" y="158">11</text></g>
+        <rect x="92" y="67" width="275" height="58" rx="12" fill="#bdefff"/><rect x="393" y="67" width="275" height="58" rx="12" fill="#ffe9ae"/><rect x="371" y="42" width="17" height="138" rx="8" fill="#c7c0b4"/>
+        <g fill="#555"><circle cx="130" cy="96" r="7"/><circle cx="180" cy="96" r="7"/><circle cx="230" cy="96" r="7"/><circle cx="280" cy="96" r="7"/><circle cx="330" cy="96" r="7"/><circle cx="430" cy="96" r="7"/><circle cx="480" cy="96" r="7"/><circle cx="530" cy="96" r="7"/><circle cx="580" cy="96" r="7"/><circle cx="630" cy="96" r="7"/><circle cx="130" cy="156" r="7"/><circle cx="180" cy="156" r="7"/><circle cx="230" cy="156" r="7"/><circle cx="280" cy="156" r="7"/><circle cx="330" cy="156" r="7"/><circle cx="430" cy="156" r="7"/><circle cx="480" cy="156" r="7"/><circle cx="530" cy="156" r="7"/><circle cx="580" cy="156" r="7"/><circle cx="630" cy="156" r="7"/></g>
+        <g font-family="system-ui" font-size="15" text-anchor="middle"><text x="230" y="119" fill="#075d79">A10–E10 соединены внутри</text><text x="530" y="119" fill="#7e5d00">F10–J10 соединены отдельно</text><text x="380" y="220" fill="#aaa">через центральную щель соединения нет</text></g>
+      </svg>
+      <p class="kid-note" data-i18n="breadboardExample">Для датчика 1 используй A10, C10 и E10. Эти три дырки уже соединены внутри breadboard. Не используй F10–J10 для этой же точки: за центральной щелью это уже другая группа.</p>
+    </div>
+    <div class="guide-card wide">
+      <h3 data-i18n="stepsTitle">Сборка по шагам</h3>
+      <p class="kid-note" data-i18n="stepsSafety">Пока ничего не подключай к USB. Сначала спокойно собери всю схему без питания.</p>
+      <ol class="kid-steps">
+        <li data-i18n="step1">Положи Arduino и breadboard перед собой так же, как на картинке. Красная длинная линия breadboard — это «плюс 5V», синяя — «земля GND».</li>
+        <li><span data-i18n="step2">Возьми красный провод «папа–папа». Один острый конец вставь в отверстие 5V на Arduino, второй — в любое отверстие вдоль красной линии «+» breadboard.</span><svg class="mini-step" viewBox="0 0 240 92" aria-label="5V to red breadboard rail"><rect x="12" y="18" width="70" height="56" rx="9" fill="#08779a"/><text x="47" y="50" text-anchor="middle" fill="white">5V</text><rect x="156" y="15" width="72" height="62" rx="8" fill="#eee"/><line x1="164" y1="29" x2="220" y2="29" stroke="#e04b42" stroke-width="6"/><path d="M66 46 C108 5 130 29 170 29" fill="none" stroke="#f04c45" stroke-width="7"/><circle cx="66" cy="46" r="5" fill="#111"/><circle cx="170" cy="29" r="5" fill="#111"/><text x="192" y="53" text-anchor="middle" fill="#b52f28">красная +</text></svg></li>
+        <li data-i18n="step3">Возьми чёрный или серый провод «папа–папа». Один конец вставь в GND на Arduino, второй — в любое отверстие вдоль синей линии «−» breadboard.</li>
+        <li data-i18n="step4">Возьми первый фоторезистор LDR. У него две тонкие металлические ножки, и у него нет плюса и минуса — любую ножку можно выбрать первой.</li>
+        <li><span data-i18n="step5">Возьми два провода «папа–мама». Надень конец «мама» (чёрная штучка с отверстием) первого провода на одну ножку LDR. Такую же чёрную штучку второго провода надень на другую ножку. Теперь от датчика идут два отдельных провода.</span><svg class="mini-step" viewBox="0 0 240 92" aria-label="Two female sockets on two LDR legs"><ellipse cx="120" cy="20" rx="25" ry="14" fill="#d7b79c" stroke="#8b6645" stroke-width="3"/><line x1="109" y1="32" x2="90" y2="52" stroke="#aaa" stroke-width="3"/><line x1="131" y1="32" x2="150" y2="52" stroke="#aaa" stroke-width="3"/><rect x="76" y="49" width="28" height="18" rx="4" fill="#111"/><rect x="136" y="49" width="28" height="18" rx="4" fill="#111"/><path d="M90 67 V88 M150 67 V88" stroke-width="7" stroke="#f04c45"/><text x="120" y="84" text-anchor="middle" fill="#aaa">2 ножки → 2 провода</text></svg></li>
+        <li data-i18n="step6">Острый конец первого провода от LDR 1 вставь в свободное отверстие красной линии «+5V».</li>
+        <li><span data-i18n="step7">Острый конец второго провода от LDR 1 вставь точно в дырку A10: найди букву A сверху и цифру 10 сбоку.</span><svg class="mini-step" viewBox="0 0 240 92" aria-label="Male jumper pin into breadboard hole A10"><rect x="20" y="38" width="200" height="42" rx="8" fill="#eee"/><g fill="#999"><circle cx="72" cy="58" r="4"/><circle cx="92" cy="58" r="4"/><circle cx="112" cy="58" r="4"/><circle cx="132" cy="58" r="4"/><circle cx="152" cy="58" r="4"/></g><path d="M72 5 V54" stroke="#8f62aa" stroke-width="8"/><path d="M72 30 V54" stroke="#bbb" stroke-width="3"/><text x="185" y="62" fill="#222">ряд 10</text><text x="72" y="18" text-anchor="middle" fill="#ddd">A10 ↓</text></svg></li>
+        <li><span data-i18n="step8">Возьми провод «папа–папа» для A0. Один конец вставь в A0 на Arduino, второй — точно в C10 на breadboard.</span><svg class="mini-step" viewBox="0 0 240 92" aria-label="LDR signal in A10, A0 in C10, and resistor in E10"><rect x="12" y="28" width="216" height="52" rx="8" fill="#eee"/><g fill="#777"><circle cx="58" cy="54" r="5"/><circle cx="92" cy="54" r="5"/><circle cx="126" cy="54" r="5"/><circle cx="160" cy="54" r="5"/><circle cx="194" cy="54" r="5"/></g><path d="M58 5 V50" stroke="#8f62aa" stroke-width="7"/><path d="M126 5 V50" stroke="#36b9ff" stroke-width="7"/><path d="M194 5 V50" stroke="#a86e2b" stroke-width="5"/><text x="58" y="19" text-anchor="middle" fill="#fff">A10 · LDR</text><text x="126" y="19" text-anchor="middle" fill="#fff">C10 · A0</text><text x="194" y="19" text-anchor="middle" fill="#fff">E10 · R</text><text x="120" y="74" text-anchor="middle" fill="#222">A10–E10 соединены внутри</text></svg></li>
+        <li><span data-i18n="step9">Возьми резистор 10 кОм. Одну металлическую ножку вставь в E10. Вторую — в ближайшую дырку синей линии «− GND». Если ножка не дотягивается, соедини её с синей линией коротким проводом.</span><svg class="mini-step" viewBox="0 0 240 92" aria-label="Resistor from E10 to GND rail"><rect x="15" y="14" width="210" height="66" rx="8" fill="#eee"/><line x1="25" y1="63" x2="215" y2="63" stroke="#347ddd" stroke-width="6"/><circle cx="62" cy="30" r="5" fill="#555"/><circle cx="178" cy="63" r="5" fill="#555"/><path d="M62 30 H87 l8 -7 12 14 12 -14 12 14 12 -7 H160 C175 30 178 42 178 63" fill="none" stroke="#9b6427" stroke-width="5"/><text x="62" y="19" text-anchor="middle" fill="#222">E10</text><text x="198" y="55" fill="#2460ad">− GND</text></svg></li>
+        <li data-i18n="step10">Проверь датчик 1: A10 — провод от LDR, C10 — провод от A0, E10 — первая ножка резистора. Второй провод LDR идёт к красной линии +5V, вторая ножка резистора — к синей линии GND.</li>
+        <li data-i18n="step11">Датчик 2 собери так же в ряду 16: провод LDR — A16, провод A1 — C16, первая ножка резистора — E16. Другой провод LDR идёт к +5V, другая ножка резистора — к GND.</li>
+        <li data-i18n="step12">Датчик 3 собери в ряду 22: провод LDR — A22, провод A2 — C22, первая ножка резистора — E22. Вторые стороны снова идут к +5V и GND.</li>
+        <li data-i18n="step13">Проверь глазами: ни один провод 5V не должен случайно попадать в синюю линию GND. Между +5V и GND всегда должен стоять LDR и резистор, а не голый провод.</li>
+        <li data-i18n="step14">Только теперь вставь USB-кабель в Arduino и компьютер. Если плата сильно нагревается или пахнет — сразу вынь USB и ещё раз проверь шаг 13.</li>
+      </ol>
+    </div>
+
+    <div class="guide-card">
+      <h3 data-i18n="checkTitle">Как проверить</h3>
+      <a class="ide-link" href="https://www.arduino.cc/en/software" target="_blank" rel="noopener noreferrer"><span data-i18n="downloadIde">Скачать Arduino IDE</span> ↗</a>
+      <ol>
+        <li data-i18n="check1">Открой Arduino IDE и выбери свою плату и порт.</li>
+        <li data-i18n="check2">Загрузи код ниже.</li>
+        <li data-i18n="check3">Открой Serial Monitor на скорости 115200.</li>
+        <li data-i18n="check4">Ты должен увидеть строки вроде 512,640,470.</li>
+        <li data-i18n="check5">Закрой Serial Monitor перед подключением сайта, иначе браузер не получит доступ к порту.</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="guide-card">
+    <h3 data-i18n="codeTitle">Код для Arduino</h3>
+    <pre class="codebox">void setup() {
+  Serial.begin(115200);
+}
+
+void loop() {
+  int a0 = analogRead(A0);
+  int a1 = analogRead(A1);
+  int a2 = analogRead(A2);
+
+  Serial.print(a0);
+  Serial.print(",");
+  Serial.print(a1);
+  Serial.print(",");
+  Serial.println(a2);
+
+  delay(30);
+}</pre>
+  </div>
+
+  <div class="guide-card">
+    <h3 data-i18n="browserTitle">Запуск инструмента</h3>
+    <ol>
+      <li data-i18n="browser1">Открой эту страницу в браузере на компьютере.</li>
+      <li data-i18n="browser2">Нажми «Включить звук».</li>
+      <li data-i18n="browser3">Нажми «Подключить Arduino» и выбери порт платы.</li>
+      <li data-i18n="browser4">Закрывай датчики рукой, фонариком или тенью. Сайт сам подстроит диапазоны.</li>
+      <li data-i18n="browser5">Если звук реагирует странно, нажми «Сбросить диапазоны» и снова проведи каждый датчик от темноты к свету.</li>
+    </ol>
+  </div>
+</section>
+<div class="credit">by <a href="https://www.instagram.com/shira_hrewish" target="_blank" rel="noopener noreferrer">Shira Hrewish</a></div>
+</main>
+
+
+
+<script>
+'use strict';
+
+const $=id=>document.getElementById(id);
+
+let lang='ru';
+let statusKey='initialStatus';
+let currentView='instrument';
+
+const copy={
+  ru:{
+    title:'Световой инструмент',
+    description:'Световой инструмент превращает движение рук, тени и вспышки света в медленную живую композицию. Три фоторезистора управляют тремя слоями звука: низким дроном, теплым органом и высоким воздушным сиянием.',
+    sound:'1. Включить звук',
+    connect:'2. Подключить Arduino',
+    modePrefix:'Режим',
+    reset:'Сбросить диапазоны',
+    stop:'Тишина',
+    sensor0:'Датчик 1 · A0 · низкий слой',
+    sensor1:'Датчик 2 · A1 · средний слой',
+    sensor2:'Датчик 3 · A2 · высокий слой',
+    waiting:'ожидание',
+    note0:'очень низкий дрон',
+    note1:'средний орган',
+    note2:'высокий воздушный слой',
+    volume:'Общая громкость',
+    initialStatus:'Сначала включи звук, затем подключи Arduino.',
+    serialNote:'Важно: Serial Monitor / Serial Plotter в Arduino IDE должны быть закрыты, иначе браузер не сможет читать порт.',
+    soundOn:'Звук включён. Теперь подключи Arduino.',
+    soundError:'Ошибка звука: ',
+    serialUnsupported:'Этот браузер не поддерживает подключение платы через USB. Открой страницу в другом браузере на компьютере.',
+    arduinoConnected:'Arduino подключена. Жду данные A0,A1,A2…',
+    unreadableLine:'Порт открыт, но строка не распознана: ',
+    data:'Данные идут',
+    connectError:'Ошибка подключения: ',
+    soundMode:'Режим звука',
+    rangesReset:'Диапазоны сброшены. Проведи каждый датчик от тени к яркому свету.',
+    stopped:'Звук остановлен.',
+    instrumentTab:'Инструмент',
+    guideTab:'Инструкция',
+    guideTitle:'Как собрать световой инструмент',
+    guideIntro:'Это версия для новичков: сначала собираем простую схему с тремя датчиками света, потом загружаем код в Arduino, проверяем поток чисел и подключаем страницу к плате через браузер.',
+    modelTitle:'Интерактивная 3D-сборка',
+    modelIntro:'Поворачивай и приближай модель. Нажми на деталь, чтобы увидеть подсказку.',
+    modelReset:'Вернуть вид',modelTop:'Вид сверху',modelHint:'↔ вращай · колесо — масштаб · нажимай на детали',
+    buyTitle:'Что купить',
+    buy1:'Arduino Uno или Nano. Uno удобнее для первого раза.',
+    buy2:'USB-кабель для Arduino и компьютер с браузером.',
+    buy3:'Макетная плата breadboard.',
+    buy4:'3 фоторезистора LDR — это датчики, которые меняют сопротивление от света.',
+    buy5:'3 резистора 10 кОм. Они нужны, чтобы Arduino могла читать свет как число.',
+    buy6:'Провода-перемычки: минимум 6 «папа–мама» для трёх LDR и 5 «папа–папа» для 5V, GND, A0, A1 и A2.',
+    ideaTitle:'Как это работает',
+    ideaText:'Каждый датчик собран как делитель напряжения: свет меняет сопротивление фоторезистора, Arduino получает число на A0, A1 или A2, а сайт превращает эти числа в звук.',
+    idea1:'Больше света — значение меняется вверх или вниз в зависимости от положения LDR и резистора.',
+    idea2:'Сайт сам калибрует минимум и максимум, поэтому просто проведи рукой от тени к яркому свету.',
+    wireTitle:'Какие провода нужны и какой конец куда вставлять',
+    wireIntro:'Тебе нужны jumper wires / Dupont wires. У провода «папа–мама» один конец острый, а второй — чёрная штучка с отверстием.',
+    wire1:'Конец «папа» / male pin — это острый металлический штырек. Его вставляют в Arduino или в отверстие breadboard.',
+    wire2:'Конец «мама» / female socket — это чёрная штучка с отверстием. Её надевают прямо на ножку фоторезистора LDR.',
+    wire4:'На каждую ножку LDR надень конец «мама» (чёрную штучку с отверстием) отдельного провода. Два острых конца «папа» вставь в разные места breadboard, как показано ниже.',
+    diagramTitle:'Схема подключения',
+    diagramNote:'Смотри на цветные провода: оранжевый 5V идет в красную линию breadboard, серый GND идет в синюю линию, а A0/A1/A2 идут в подсвеченные рабочие строки 10, 16 и 22, где встречаются ножка LDR и ножка резистора 10 кОм.',
+    plug1:'Каждый LDR ставится между красной линией 5V и своей рабочей строкой.',
+    plug2:'Каждый резистор 10 кОм ставится между этой же рабочей строкой и синей линией GND.',
+    plug3:'A0, A1 и A2 подключаются именно в рабочие строки, не в 5V и не в GND.',
+    stepsTitle:'Сборка по шагам',
+    breadboardTitle:'Как читать дырки на breadboard',
+    breadboardText:'Сверху написаны буквы A, B, C, D, E, потом идёт щель, затем F, G, H, I, J. Сбоку написаны цифры. Название дырки получается из буквы и цифры: например A10.',
+    breadboardExample:'Для датчика 1 используй A10, C10 и E10. Эти три дырки уже соединены внутри breadboard. Не используй F10–J10 для этой же точки: за центральной щелью это уже другая группа.',
+    stepsSafety:'Пока ничего не подключай к USB. Сначала спокойно собери всю схему без питания.',
+    step1:'Положи Arduino и breadboard перед собой так же, как на картинке. Красная длинная линия breadboard — это «плюс 5V», синяя — «земля GND».',
+    step2:'Возьми красный провод «папа–папа». Один острый конец вставь в отверстие 5V на Arduino, второй — в любое отверстие вдоль красной линии «+» breadboard.',
+    step3:'Возьми чёрный или серый провод «папа–папа». Один конец вставь в GND на Arduino, второй — в любое отверстие вдоль синей линии «−» breadboard.',
+    step4:'Возьми первый фоторезистор LDR. У него две тонкие металлические ножки, и у него нет плюса и минуса — любую ножку можно выбрать первой.',
+    step5:'Возьми два провода «папа–мама». Надень конец «мама» (чёрная штучка с отверстием) первого провода на одну ножку LDR. Такую же чёрную штучку второго провода надень на другую ножку. Теперь от датчика идут два отдельных провода.',
+    step6:'Острый конец первого провода от LDR 1 вставь в свободное отверстие красной линии «+5V».',
+    step7:'Острый конец второго провода от LDR 1 вставь точно в дырку A10: найди букву A сверху и цифру 10 сбоку.',
+    step8:'Возьми провод «папа–папа» для A0. Один конец вставь в A0 на Arduino, второй — точно в C10 на breadboard.',
+    step9:'Возьми резистор 10 кОм. Одну металлическую ножку вставь в E10. Вторую — в ближайшую дырку синей линии «− GND». Если ножка не дотягивается, соедини её с синей линией коротким проводом.',
+    step10:'Проверь датчик 1: A10 — провод от LDR, C10 — провод от A0, E10 — первая ножка резистора. Второй провод LDR идёт к красной линии +5V, вторая ножка резистора — к синей линии GND.',
+    step11:'Датчик 2 собери так же в ряду 16: провод LDR — A16, провод A1 — C16, первая ножка резистора — E16. Другой провод LDR идёт к +5V, другая ножка резистора — к GND.',
+    step12:'Датчик 3 собери в ряду 22: провод LDR — A22, провод A2 — C22, первая ножка резистора — E22. Вторые стороны снова идут к +5V и GND.',
+    step13:'Проверь глазами: ни один провод 5V не должен случайно попадать в синюю линию GND. Между +5V и GND всегда должен стоять LDR и резистор, а не голый провод.',
+    step14:'Только теперь вставь USB-кабель в Arduino и компьютер. Если плата сильно нагревается или пахнет — сразу вынь USB и ещё раз проверь шаг 13.',
+    checkTitle:'Как проверить',
+    downloadIde:'Скачать Arduino IDE',
+    check1:'Открой Arduino IDE и выбери свою плату и порт.',
+    check2:'Загрузи код ниже.',
+    check3:'Открой Serial Monitor на скорости 115200.',
+    check4:'Ты должен увидеть строки вроде 512,640,470.',
+    check5:'Закрой Serial Monitor перед подключением сайта, иначе браузер не получит доступ к порту.',
+    codeTitle:'Код для Arduino',
+    browserTitle:'Запуск инструмента',
+    browser1:'Открой эту страницу в браузере на компьютере.',
+    browser2:'Нажми «Включить звук».',
+    browser3:'Нажми «Подключить Arduino» и выбери порт платы.',
+    browser4:'Закрывай датчики рукой, фонариком или тенью. Сайт сам подстроит диапазоны.',
+    browser5:'Если звук реагирует странно, нажми «Сбросить диапазоны» и снова проведи каждый датчик от темноты к свету.',
+    states:['ПОЧТИ ТИШИНА','ТЕНЬ','СРЕДНИЙ СВЕТ','ЯРКИЙ СВЕТ'],
+    organNotes:['низкий орган','средний орган','высокий орган'],
+    synthwaveNotes:['ретро-бас','аналоговый пэд','неоновый лид'],
+    whimsicalNotes:['мягкие колокольчики','игрушечные клавиши','искристые перезвоны']
+  },
+  en:{
+    title:'Light Instrument',
+    description:'Light Instrument turns hand movement, shadows, and flashes of light into a slow living composition. Three photoresistors control three sound layers: a low drone, a warm organ, and a bright airy shimmer.',
+    sound:'1. Enable sound',
+    connect:'2. Connect Arduino',
+    modePrefix:'Mode',
+    reset:'Reset ranges',
+    stop:'Silence',
+    sensor0:'Sensor 1 · A0 · low layer',
+    sensor1:'Sensor 2 · A1 · middle layer',
+    sensor2:'Sensor 3 · A2 · high layer',
+    waiting:'waiting',
+    note0:'very low drone',
+    note1:'middle organ',
+    note2:'high airy layer',
+    volume:'Master volume',
+    initialStatus:'First enable sound, then connect Arduino.',
+    serialNote:'Important: Serial Monitor / Serial Plotter in Arduino IDE must be closed, otherwise the browser cannot read the port.',
+    soundOn:'Sound is on. Now connect Arduino.',
+    soundError:'Sound error: ',
+    serialUnsupported:'This browser cannot connect to the board over USB. Open the page in another desktop browser.',
+    arduinoConnected:'Arduino connected. Waiting for A0,A1,A2 data…',
+    unreadableLine:'Port is open, but the line was not recognized: ',
+    data:'Incoming data',
+    connectError:'Connection error: ',
+    soundMode:'Sound mode',
+    rangesReset:'Ranges reset. Move each sensor from shadow to bright light.',
+    stopped:'Sound stopped.',
+    instrumentTab:'Instrument',
+    guideTab:'Guide',
+    guideTitle:'How to build the light instrument',
+    guideIntro:'This is a beginner-friendly version: build a simple circuit with three light sensors, upload code to Arduino, check the stream of numbers, then connect this page to the board through the browser.',
+    modelTitle:'Interactive 3D build',
+    modelIntro:'Rotate and zoom the model. Click a part to see a tip.',
+    modelReset:'Reset view',modelTop:'Top view',modelHint:'↔ rotate · wheel to zoom · click the parts',
+    buyTitle:'What to buy',
+    buy1:'Arduino Uno or Nano. Uno is easier for a first build.',
+    buy2:'USB cable for Arduino and a computer with a browser.',
+    buy3:'Breadboard.',
+    buy4:'3 LDR photoresistors — sensors that change resistance when light changes.',
+    buy5:'3 resistors, 10 kΩ. They let Arduino read light as a number.',
+    buy6:'Jumper wires: at least 6 male-to-female wires for the three LDRs and 5 male-to-male wires for 5V, GND, A0, A1, and A2.',
+    ideaTitle:'How it works',
+    ideaText:'Each sensor is a voltage divider: light changes the photoresistor resistance, Arduino receives a number on A0, A1, or A2, and the website turns those numbers into sound.',
+    idea1:'More light changes the value up or down depending on where the LDR and resistor sit in the circuit.',
+    idea2:'The site auto-calibrates minimum and maximum, so move your hand from shadow to bright light after connecting.',
+    wireTitle:'Which wires you need and which end goes where',
+    wireIntro:'You need jumper wires / Dupont wires. For connecting a sensor without soldering, male-to-female wires are easiest: one side has a metal pin, the other side has a black socket.',
+    wire1:'The “male” end / male pin is the sharp metal pin. It plugs into Arduino pins or breadboard holes.',
+    wire2:'The “female” end / female socket is the black socket. It can slide directly onto an LDR photoresistor leg.',
+    wire4:'Put the black female end of a separate wire onto each LDR leg. Insert the two sharp male ends into different breadboard points as shown below.',
+    diagramTitle:'Wiring diagram',
+    diagramNote:'Follow the colored wires: orange 5V goes to the red breadboard rail, gray GND goes to the blue rail, and A0/A1/A2 go to the highlighted working rows 10, 16, and 22, where an LDR leg and a 10 kΩ resistor leg meet.',
+    plug1:'Each LDR goes between the red 5V rail and its own working row.',
+    plug2:'Each 10 kΩ resistor goes between that same working row and the blue GND rail.',
+    plug3:'A0, A1, and A2 connect to the working rows, not directly to 5V or GND.',
+    stepsTitle:'Build steps',
+    breadboardTitle:'How to read breadboard holes',
+    breadboardText:'Letters A, B, C, D, E run across the top, followed by the center gap, then F, G, H, I, J. Numbers run down the side. A hole name combines both, for example A10.',
+    breadboardExample:'For sensor 1 use A10, C10, and E10. These three holes are already connected inside the breadboard. F10–J10 are on the other side of the center gap and form a separate group.',
+    stepsSafety:'Do not connect USB yet. First build the whole circuit with the power off.',
+    step1:'Place Arduino and the breadboard in front of you as shown. The long red breadboard rail is +5V; the blue rail is GND.',
+    step2:'Take a red male-to-male wire. Put one sharp end into Arduino 5V and the other into any hole along the red + breadboard rail.',
+    step3:'Take a black or gray male-to-male wire. Put one end into Arduino GND and the other into any hole along the blue − breadboard rail.',
+    step4:'Take LDR 1. It has two thin metal legs and no polarity, so either leg can be first.',
+    step5:'Take two male-to-female wires. Slide one black female socket over each LDR leg. The sensor now has two separate wires.',
+    step6:'Put the sharp end of LDR 1’s first wire into a free hole on the red +5V rail.',
+    step7:'Put the sharp end of LDR 1’s second wire exactly into A10: find letter A at the top and number 10 at the side.',
+    step8:'Take the A0 male-to-male wire. Put one end into Arduino A0 and the other exactly into C10.',
+    step9:'Take a 10 kΩ resistor. Put one metal leg into E10 and the other into the nearest blue − GND rail hole. If it cannot reach, use a short jumper to the blue rail.',
+    step10:'Check sensor 1: A10 holds the LDR wire, C10 holds A0, and E10 holds one resistor leg. The other LDR wire goes to +5V; the other resistor leg goes to GND.',
+    step11:'Build sensor 2 in row 16: LDR wire in A16, A1 wire in C16, and one resistor leg in E16. The other sides go to +5V and GND.',
+    step12:'Build sensor 3 in row 22: LDR wire in A22, A2 wire in C22, and one resistor leg in E22. The other sides go to +5V and GND.',
+    step13:'Look carefully: no 5V wire may go directly to the blue GND rail. There must never be a bare wire directly joining +5V and GND.',
+    step14:'Only now connect USB to Arduino and the computer. If the board gets hot or smells, unplug USB immediately and repeat step 13.',
+    checkTitle:'How to test',
+    downloadIde:'Download Arduino IDE',
+    check1:'Open Arduino IDE and choose your board and port.',
+    check2:'Upload the code below.',
+    check3:'Open Serial Monitor at 115200 baud.',
+    check4:'You should see lines like 512,640,470.',
+    check5:'Close Serial Monitor before connecting the website, otherwise the browser cannot access the port.',
+    codeTitle:'Arduino code',
+    browserTitle:'Run the instrument',
+    browser1:'Open this page in a browser on your computer.',
+    browser2:'Click “Enable sound”.',
+    browser3:'Click “Connect Arduino” and choose the board port.',
+    browser4:'Cover the sensors with your hand, a flashlight, or shadow. The site will calibrate the ranges.',
+    browser5:'If the sound reacts strangely, click “Reset ranges” and move each sensor from dark to bright again.',
+    states:['ALMOST SILENT','SHADOW','MEDIUM LIGHT','BRIGHT LIGHT'],
+    organNotes:['low organ','mid organ','high organ'],
+    synthwaveNotes:['retro bass','analog pad','neon lead'],
+    whimsicalNotes:['soft bells','toy keys','sparkle chimes']
+  }
+};
+
+function t(key){return copy[lang][key]}
+
+function setStatus(key,kind='text',extra=''){
+  statusKey=key;
+  const text=t(key)+extra;
+  if(kind==='ok')$('status').innerHTML='<span class="ok">'+text+'</span>';
+  else if(kind==='bad')$('status').innerHTML='<span class="bad">'+text+'</span>';
+  else $('status').textContent=text;
+}
+
+function updateModeButton(){
+  $('mode').textContent=t('modePrefix')+': '+modeLabels[mode];
+}
+
+function applyLanguage(nextLang){
+  lang=nextLang;
+  document.documentElement.lang=lang;
+  document.title=t('title');
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const key=el.getAttribute('data-i18n');
+    if(key&&copy[lang][key])el.textContent=t(key);
+  });
+  $('lang-ru').classList.toggle('active',lang==='ru');
+  $('lang-en').classList.toggle('active',lang==='en');
+  updateModeButton();
+  if(statusKey)$('status').textContent=t(statusKey);
+  for(let i=0;i<3;i++){
+    if($('v'+i).textContent==='—')$('s'+i).textContent=t('waiting');
+  }
+}
+
+function setView(view){
+  currentView=view;
+  $('instrument-view').hidden=view!=='instrument';
+  $('guide-view').hidden=view!=='guide';
+  $('tab-instrument').classList.toggle('active',view==='instrument');
+  $('tab-guide').classList.toggle('active',view==='guide');
+}
+
+let ctx=null, master=null, enabled=false, port=null, reader=null;
+let outputBus=null, delayNode=null, feedbackNode=null, wetGain=null, filterNode=null;
+let mins=[1023,1023,1023], maxs=[0,0,0], smooth=[0,0,0];
+let voices=[null,null,null], currentNote=[-1,-1,-1], lastNoteChange=[0,0,0];
+
+let mode='organ';
+const modeOrder=['organ','synthwave','whimsical'];
+const modeLabels={organ:'Organ',synthwave:'Synthwave',whimsical:'Whimsical'};
+
+const scales=[
+  [38,41,43,45,48,50],
+  [50,53,55,57,60,62,65],
+  [69,72,74,77,79,81,84]
+];
+
+const noteNames=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+function noteName(m){return noteNames[m%12]+(Math.floor(m/12)-1)}
+function midiFreq(m){return 440*2**((m-69)/12)}
+
+function initAudio(){
+  if(ctx)return;
+  ctx=new AudioContext();
+
+  outputBus=ctx.createGain();
+  master=ctx.createGain();
+  master.gain.value=0;
+
+  const compressor=ctx.createDynamicsCompressor();
+  delayNode=ctx.createDelay(2);
+  feedbackNode=ctx.createGain();
+  wetGain=ctx.createGain();
+  filterNode=ctx.createBiquadFilter();
+
+  outputBus.connect(filterNode);
+  filterNode.connect(master);
+  filterNode.connect(delayNode);
+  delayNode.connect(feedbackNode);
+  feedbackNode.connect(delayNode);
+  delayNode.connect(wetGain);
+  wetGain.connect(master);
+
+  master.connect(compressor);
+  compressor.connect(ctx.destination);
+
+  applyModeFX();
+}
+
+function applyModeFX(){
+  if(!ctx)return;
+
+  if(mode==='organ'){
+    delayNode.delayTime.setTargetAtTime(.43,ctx.currentTime,.05);
+    feedbackNode.gain.setTargetAtTime(.36,ctx.currentTime,.05);
+    wetGain.gain.setTargetAtTime(.30,ctx.currentTime,.05);
+    filterNode.type='lowpass';
+    filterNode.frequency.setTargetAtTime(2600,ctx.currentTime,.05);
+    filterNode.Q.setTargetAtTime(.7,ctx.currentTime,.05);
+  }else if(mode==='synthwave'){
+    delayNode.delayTime.setTargetAtTime(.31,ctx.currentTime,.05);
+    feedbackNode.gain.setTargetAtTime(.48,ctx.currentTime,.05);
+    wetGain.gain.setTargetAtTime(.24,ctx.currentTime,.05);
+    filterNode.type='lowpass';
+    filterNode.frequency.setTargetAtTime(4200,ctx.currentTime,.05);
+    filterNode.Q.setTargetAtTime(1.15,ctx.currentTime,.05);
+  }else{
+    delayNode.delayTime.setTargetAtTime(.58,ctx.currentTime,.05);
+    feedbackNode.gain.setTargetAtTime(.28,ctx.currentTime,.05);
+    wetGain.gain.setTargetAtTime(.38,ctx.currentTime,.05);
+    filterNode.type='lowpass';
+    filterNode.frequency.setTargetAtTime(5200,ctx.currentTime,.05);
+    filterNode.Q.setTargetAtTime(.5,ctx.currentTime,.05);
+  }
+}
+
+async function enableSound(){
+  initAudio();
+  await ctx.resume();
+  enabled=true;
+  master.gain.setTargetAtTime(Number($('volume').value),ctx.currentTime,.05);
+}
+
+function stopVoice(i){
+  const v=voices[i];
+  if(!v||!ctx)return;
+  voices[i]=null;
+
+  const t=ctx.currentTime;
+  v.amp.gain.cancelScheduledValues(t);
+  v.amp.gain.setTargetAtTime(0.0001,t,.16);
+
+  v.oscs.forEach(o=>{try{o.stop(t+.9)}catch{}});
+  setTimeout(()=>{try{v.amp.disconnect()}catch{}},1100);
+}
+
+function makeOrganVoice(i,midi,intensity){
+  const now=ctx.currentTime, amp=ctx.createGain();
+  const target=[.20,.16,.12][i]*Math.pow(intensity,1.35);
+
+  amp.gain.setValueAtTime(0.0001,now);
+  amp.gain.linearRampToValueAtTime(Math.max(.0001,target),now+.10);
+  amp.connect(outputBus);
+
+  const base=midiFreq(midi);
+  const oscs=[1,2,3].map((h,idx)=>{
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.type='sine';
+    o.frequency.value=base*h;
+    g.gain.value=[1,.28,.10][idx];
+    o.connect(g); g.connect(amp); o.start();
+    return o;
+  });
+
+  return {amp,oscs,midi};
+}
+
+function makeSynthwaveVoice(i,midi,intensity){
+  const now=ctx.currentTime, amp=ctx.createGain();
+  const target=[.15,.13,.10][i]*Math.pow(intensity,1.2);
+
+  amp.gain.setValueAtTime(0.0001,now);
+  amp.gain.linearRampToValueAtTime(Math.max(.0001,target),now+.07);
+  amp.connect(outputBus);
+
+  const base=midiFreq(midi);
+  const defs=[['sawtooth',-9,.42],['sawtooth',9,.42],['square',0,.16]];
+
+  const oscs=defs.map(([type,det,gain])=>{
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.type=type; o.frequency.value=base; o.detune.value=det;
+    g.gain.value=gain;
+    o.connect(g); g.connect(amp); o.start();
+    return o;
+  });
+
+  return {amp,oscs,midi};
+}
+
+function makeWhimsicalVoice(i,midi,intensity){
+  const now=ctx.currentTime, amp=ctx.createGain();
+  const target=[.10,.09,.075][i]*Math.pow(intensity,1.1);
+
+  amp.gain.setValueAtTime(0.0001,now);
+  amp.gain.linearRampToValueAtTime(Math.max(.0001,target),now+.025);
+  amp.gain.exponentialRampToValueAtTime(0.0001,now+1.8+(1-intensity)*.8);
+  amp.connect(outputBus);
+
+  const base=midiFreq(midi);
+  const defs=[['sine',1,.80],['triangle',2,.16],['sine',3,.07],['sine',4,.03]];
+
+  const oscs=defs.map(([type,mul,gain])=>{
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.type=type; o.frequency.value=base*mul; g.gain.value=gain;
+    o.connect(g); g.connect(amp); o.start(now); o.stop(now+2.8);
+    return o;
+  });
+
+  return {amp,oscs,midi,oneshot:true};
+}
+
+function startVoice(i,midi,intensity){
+  if(!enabled||!ctx)return;
+  stopVoice(i);
+
+  let v;
+  if(mode==='organ')v=makeOrganVoice(i,midi,intensity);
+  else if(mode==='synthwave')v=makeSynthwaveVoice(i,midi,intensity);
+  else v=makeWhimsicalVoice(i,midi,intensity);
+
+  voices[i]=v;
+  currentNote[i]=midi;
+}
+
+function updateVoiceGain(i,intensity){
+  const v=voices[i];
+  if(!v||!ctx||v.oneshot)return;
+
+  let max=.12,power=1.35;
+  if(mode==='organ'){max=[.20,.16,.12][i];power=1.35}
+  if(mode==='synthwave'){max=[.15,.13,.10][i];power=1.2}
+
+  const target=Math.max(.0001,max*Math.pow(intensity,power));
+  v.amp.gain.setTargetAtTime(target,ctx.currentTime,.30);
+}
+
+function chooseNoteIndex(i,d){
+  return Math.min(scales[i].length-1,Math.floor(d*scales[i].length));
+}
+
+function updateMusic(){
+  if(!enabled||!ctx)return;
+  const nowMs=performance.now();
+
+  for(let i=0;i<3;i++){
+    const d=smooth[i];
+
+    if(d<.07){
+      if(voices[i])updateVoiceGain(i,0);
+      continue;
+    }
+
+    const midi=scales[i][chooseNoteIndex(i,d)];
+    const holdMs =
+      mode==='organ' ? [1400,1100,900][i] :
+      mode==='synthwave' ? [900,700,540][i] :
+      [1700,1300,950][i];
+
+    const needsNew =
+      currentNote[i]!==midi ||
+      !voices[i] ||
+      (mode==='whimsical' && nowMs-lastNoteChange[i]>holdMs);
+
+    if(needsNew && nowMs-lastNoteChange[i]>holdMs){
+      lastNoteChange[i]=nowMs;
+      startVoice(i,midi,d);
+    }else{
+      updateVoiceGain(i,d);
+    }
+
+    $('n'+i).textContent=
+      noteName(midi)+' · '+
+      (mode==='organ'
+        ? t('organNotes')[i]
+        : mode==='synthwave'
+        ? t('synthwaveNotes')[i]
+        : t('whimsicalNotes')[i]);
+  }
+}
+
+function processSensor(i,value){
+  if(value<mins[i])mins[i]=value;
+  if(value>maxs[i])maxs[i]=value;
+
+  let range=maxs[i]-mins[i];
+  if(range<35)range=35;
+
+  let d=(value-mins[i])/range;
+  d=Math.max(0,Math.min(1,d));
+  smooth[i]+=(d-smooth[i])*.06;
+
+  const s=smooth[i];
+  const states=t('states');
+  const state=s<.08?states[0]:s<.30?states[1]:s<.68?states[2]:states[3];
+
+  $('v'+i).textContent=value;
+  $('p'+i).textContent=Math.round(s*100)+'%';
+  $('s'+i).textContent=state;
+  $('b'+i).style.width=(s*100)+'%';
+
+  updateMusic();
+}
+
+function parseLine(line){
+  const m=line.trim().match(/^(\d+)\s*,\s*(\d+)\s*,\s*(\d+)$/);
+  if(!m)return null;
+  const vals=[Number(m[1]),Number(m[2]),Number(m[3])];
+  if(vals.some(v=>v<0||v>4095))return null;
+  return vals;
+}
+
+async function connect(){
+  if(!('serial' in navigator)){
+    setStatus('serialUnsupported','bad');
+    return;
+  }
+
+  port=await navigator.serial.requestPort();
+  await port.open({baudRate:115200});
+  $('connect').disabled=true;
+  setStatus('arduinoConnected','ok');
+
+  reader=port.readable.getReader();
+  const decoder=new TextDecoder();
+  let buffer='';
+
+  try{
+    while(true){
+      const {value,done}=await reader.read();
+      if(done)break;
+      if(!value)continue;
+
+      buffer+=decoder.decode(value,{stream:true});
+      const lines=buffer.split(/\r?\n/);
+      buffer=lines.pop();
+
+      for(const rawLine of lines){
+        const line=rawLine.trim();
+        if(!line)continue;
+
+        $('raw').textContent='RAW SERIAL: '+line;
+        const vals=parseLine(line);
+
+        if(!vals){
+          setStatus('unreadableLine','bad',line);
+          continue;
+        }
+
+        vals.forEach((v,i)=>processSensor(i,v));
+        $('status').innerHTML='<span class="ok">'+t('data')+': A0='+vals[0]+' · A1='+vals[1]+' · A2='+vals[2]+'</span>';
+      }
+    }
+  }finally{
+    try{reader.releaseLock()}catch{}
+    reader=null;
+    $('connect').disabled=false;
+  }
+}
+
+$('sound').onclick=()=>{
+  enableSound().then(()=>{
+    updateMusic();
+    setStatus('soundOn');
+  }).catch(e=>setStatus('soundError','text',e.message));
+};
+
+$('connect').onclick=()=>{
+  connect().catch(e=>{
+    $('connect').disabled=false;
+    setStatus('connectError','bad',e.message);
+  });
+};
+
+$('mode').onclick=()=>{
+  mode=modeOrder[(modeOrder.indexOf(mode)+1)%modeOrder.length];
+  updateModeButton();
+  if(ctx)applyModeFX();
+
+  for(let i=0;i<3;i++){
+    stopVoice(i);
+    currentNote[i]=-1;
+    lastNoteChange[i]=0;
+  }
+
+  if(enabled)updateMusic();
+  $('status').textContent=t('soundMode')+': '+modeLabels[mode];
+};
+
+$('reset').onclick=()=>{
+  mins=[1023,1023,1023];
+  maxs=[0,0,0];
+  smooth=[0,0,0];
+  currentNote=[-1,-1,-1];
+  for(let i=0;i<3;i++)stopVoice(i);
+  setStatus('rangesReset');
+};
+
+$('stop').onclick=()=>{
+  enabled=false;
+  for(let i=0;i<3;i++)stopVoice(i);
+  if(master&&ctx)master.gain.setTargetAtTime(0,ctx.currentTime,.05);
+  setStatus('stopped');
+};
+
+$('volume').oninput=()=>{
+  if(master&&ctx&&enabled){
+    master.gain.setTargetAtTime(Number($('volume').value),ctx.currentTime,.05);
+  }
+};
+
+const modelInfo={
+  ru:{
+    usb:['USB-кабель','Вставь USB-кабель в большой серебристый разъём Arduino, а второй конец — в компьютер. Он подаёт питание и передаёт данные.'],
+    power:['Красный провод · 5V','Один конец — в пин 5V на Arduino. Второй — в красную шину «+» breadboard. Не вставляй его в VIN или 3.3V.'],
+    ground:['Серый/чёрный провод · GND','Один конец — в любой пин GND Arduino. Второй — в синюю шину «−» breadboard. Это общая земля для всех трёх датчиков.'],
+    a0:['Голубой провод · A0','Из пина A0 Arduino — в рабочую строку датчика 1. В этой же строке должны встретиться ножка LDR 1 и верхний конец резистора 10 кОм.'],
+    a1:['Жёлтый провод · A1','Из пина A1 Arduino — в отдельную рабочую строку датчика 2. В той же строке: ножка LDR 2 и резистор 10 кОм.'],
+    a2:['Фиолетовый провод · A2','Из пина A2 Arduino — в отдельную рабочую строку датчика 3. В той же строке: ножка LDR 3 и резистор 10 кОм.'],
+    sensor0:['Фоторезистор LDR 1 · два провода','На каждую ножку LDR надень отдельный female-разъём. Первый провод вставь в ряд, соединённый с +5V; второй — в сигнальную строку A0. Сами две ножки между собой на breadboard не замыкай.'],sensor1:['Фоторезистор LDR 2 · два провода','На каждую ножку LDR нужен свой female-провод. Первый приходит к +5V, второй — в сигнальную строку A1 вместе с одной ножкой резистора 10 кОм.'],sensor2:['Фоторезистор LDR 3 · два провода','На каждую ножку LDR нужен свой female-провод. Первый приходит к +5V, второй — в сигнальную строку A2 вместе с одной ножкой резистора 10 кОм.'],
+    resistors:['Три резистора · по две ножки','Обе металлические ножки каждого резистора вставляются в breadboard: первая — в сигнальную строку своего LDR и A0/A1/A2, вторая — в отдельную точку, соединённую с синей шиной GND.']
+  },
+  en:{
+    usb:['USB cable','Plug the USB cable into the large silver Arduino socket and the other end into the computer. It supplies power and carries data.'],power:['Red wire · 5V','Arduino 5V pin to the red “+” breadboard rail. Do not use VIN or 3.3V.'],ground:['Gray/black wire · GND','Any Arduino GND pin to the blue “−” breadboard rail. This is the common ground for all sensors.'],a0:['Blue wire · A0','Arduino A0 to sensor 1 working row, shared with one LDR 1 lead and one 10 kΩ resistor leg.'],a1:['Yellow wire · A1','Arduino A1 to sensor 2 working row, shared with one LDR 2 lead and one 10 kΩ resistor leg.'],a2:['Purple wire · A2','Arduino A2 to sensor 3 working row, shared with one LDR 3 lead and one 10 kΩ resistor leg.'],sensor0:['Photoresistor LDR 1 · two wires','Put a separate female connector on each LDR leg. The first wire goes to the +5V-connected row; the second goes to the A0 signal row.'],sensor1:['Photoresistor LDR 2 · two wires','Each LDR leg needs its own female wire. One goes to +5V; the other goes to the A1 signal row with one 10 kΩ resistor leg.'],sensor2:['Photoresistor LDR 3 · two wires','Each LDR leg needs its own female wire. One goes to +5V; the other goes to the A2 signal row with one 10 kΩ resistor leg.'],resistors:['Three resistors · two legs each','Both metal legs plug into the breadboard: one in the sensor signal row with A0/A1/A2, the other in a separate point connected to the blue GND rail.']
+  }
+};
+
+(()=>{
+  const view=$('model-viewport'),stage=$('model-stage'),pop=$('model-popover');
+  let rx=54,rz=-7,scale=window.innerWidth<=760?.58:.88,drag=false,x=0,y=0,moved=false;
+  const draw=()=>stage.style.transform=`translate(-50%,-50%) rotateX(${rx}deg) rotateZ(${rz}deg) scale(${scale})`;
+  const show=key=>{const item=modelInfo[lang][key];if(!item)return;$('model-pop-title').textContent=item[0];$('model-pop-text').textContent=item[1];pop.hidden=false};
+  view.addEventListener('pointerdown',e=>{if(e.target.closest('[data-info],button'))return;drag=true;moved=false;x=e.clientX;y=e.clientY;view.setPointerCapture(e.pointerId);view.classList.add('dragging');stage.classList.add('dragging')});
+  view.addEventListener('pointermove',e=>{if(!drag)return;const dx=e.clientX-x,dy=e.clientY-y;if(Math.abs(dx)+Math.abs(dy)>2)moved=true;rz+=dx*.35;rx=Math.max(10,Math.min(80,rx-dy*.28));x=e.clientX;y=e.clientY;draw()});
+  const end=()=>{drag=false;view.classList.remove('dragging');stage.classList.remove('dragging')};view.addEventListener('pointerup',end);view.addEventListener('pointercancel',end);
+  view.addEventListener('wheel',e=>{e.preventDefault();scale=Math.max(.42,Math.min(1.35,scale-e.deltaY*.001));draw()},{passive:false});
+  document.querySelectorAll('[data-info]').forEach(el=>{el.addEventListener('click',e=>{e.stopPropagation();show(el.dataset.info)});el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();show(el.dataset.info)}})});
+  $('model-close').onclick=()=>pop.hidden=true;
+  $('model-reset').onclick=()=>{rx=54;rz=-7;scale=window.innerWidth<=760?.58:.88;draw()};$('model-top').onclick=()=>{rx=0;rz=0;draw()};draw();
+})();
+
+$('lang-ru').onclick=()=>applyLanguage('ru');
+$('lang-en').onclick=()=>applyLanguage('en');
+$('tab-instrument').onclick=()=>setView('instrument');
+$('tab-guide').onclick=()=>setView('guide');
+applyLanguage('ru');
+setView(currentView);
+</script>
+
+
+</body>
+</html>
